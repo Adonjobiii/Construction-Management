@@ -950,7 +950,7 @@ router.get('/dashboard-metrics', authenticateToken, async (req, res) => {
         }
       }
 
-      siteCountResult = await db.query(`SELECT COUNT(*) as count FROM sites s ${siteFilter} AND (s.status = "in-progress" OR s.status = "planning")`, params);
+      siteCountResult = await db.query(`SELECT COUNT(*) as count FROM sites s ${siteFilter} AND (s.status = 'in-progress' OR s.status = 'planning')`, params);
       expenseSumResult = await db.query(`
         SELECT SUM(e.amount) as total 
         FROM expenses e 
@@ -958,7 +958,7 @@ router.get('/dashboard-metrics', authenticateToken, async (req, res) => {
         ${siteFilter}
       `, params);
       
-      pendingRequestResult = await db.query('SELECT COUNT(*) as count FROM requests WHERE submitted_by = ? AND status = "pending"', [req.user.id]);
+      pendingRequestResult = await db.query(`SELECT COUNT(*) as count FROM requests WHERE submitted_by = ? AND status = 'pending'`, [req.user.id]);
       
       expenseCategoryResult = await db.query(`
         SELECT e.category, SUM(e.amount) as value 
@@ -968,17 +968,26 @@ router.get('/dashboard-metrics', authenticateToken, async (req, res) => {
         GROUP BY e.category
       `, params);
 
-      const monthlySql = db.isSQLite() ? 
-        `SELECT strftime('%Y-%m', e.date_time) as month, SUM(e.amount) as total 
-         FROM expenses e 
-         JOIN sites s ON e.site_id = s.id 
-         ${siteFilter}
-         GROUP BY month ORDER BY month DESC LIMIT 6` :
-        `SELECT DATE_FORMAT(e.date_time, '%Y-%m') as month, SUM(e.amount) as total 
+      let monthlySql = '';
+      if (db.isSQLite && db.isSQLite()) {
+        monthlySql = `SELECT strftime('%Y-%m', e.date_time) as month, SUM(e.amount) as total 
          FROM expenses e 
          JOIN sites s ON e.site_id = s.id 
          ${siteFilter}
          GROUP BY month ORDER BY month DESC LIMIT 6`;
+      } else if (db.isPostgres && db.isPostgres()) {
+        monthlySql = `SELECT TO_CHAR(e.date_time, 'YYYY-MM') as month, SUM(e.amount) as total 
+         FROM expenses e 
+         JOIN sites s ON e.site_id = s.id 
+         ${siteFilter}
+         GROUP BY month ORDER BY month DESC LIMIT 6`;
+      } else {
+        monthlySql = `SELECT DATE_FORMAT(e.date_time, '%Y-%m') as month, SUM(e.amount) as total 
+         FROM expenses e 
+         JOIN sites s ON e.site_id = s.id 
+         ${siteFilter}
+         GROUP BY month ORDER BY month DESC LIMIT 6`;
+      }
 
       monthlyTrendResult = await db.query(monthlySql, params);
     }

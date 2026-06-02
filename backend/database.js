@@ -90,7 +90,8 @@ const db = {
       }
     }
   },
-  isSQLite: () => isSQLite
+  isSQLite: () => isSQLite,
+  isPostgres: () => isPostgres
 };
 
 async function initializeDatabase() {
