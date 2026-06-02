@@ -242,6 +242,32 @@ router.put('/auth/users/:id/password', authenticateToken, requireRole(['admin'])
   }
 });
 
+// Admin-only: Delete user
+router.delete('/auth/users/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    const existing = await db.query('SELECT login_id, name FROM users WHERE id = ?', [userId]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (userId == req.user.id) {
+      return res.status(400).json({ error: 'You cannot delete your own admin account.' });
+    }
+
+    await db.query('DELETE FROM users WHERE id = ?', [userId]);
+
+    await logActivity(req.user.id, 'Delete User', `Deleted user ID ${userId} (${existing[0].name}).`);
+
+    req.io.emit('sync_users', { action: 'delete', userId });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error deleting user. They may be tied to existing records (sites, expenses, etc).' });
+  }
+});
+
 // ------------------------------------------------------------------
 // SITE MANAGEMENT MODULE
 // ------------------------------------------------------------------

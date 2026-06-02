@@ -11,7 +11,8 @@ import {
   X, 
   MapPin,
   Lock,
-  Building
+  Building,
+  Trash2
 } from 'lucide-react';
 import apiClient from '../api';
 
@@ -143,6 +144,17 @@ export default function Users({ users, sites, user: currentUser, onRefresh, isDa
     }
   };
 
+  const handleDeleteUser = async (usr) => {
+    if (window.confirm(`Are you sure you want to permanently delete user "${usr.name}"? This action cannot be undone.`)) {
+      try {
+        await apiClient.delete(`/auth/users/${usr.id}`);
+        onRefresh();
+      } catch (err) {
+        alert(err.response?.data?.error || 'Failed to delete user.');
+      }
+    }
+  };
+
   const getRoleLabel = (r) => {
     switch (r) {
       case 'admin': return 'Administrator';
@@ -265,6 +277,13 @@ export default function Users({ users, sites, user: currentUser, onRefresh, isDa
                           <span>Enable</span>
                         </>
                       )}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(usr)}
+                      className={`flex items-center gap-1 text-[10px] font-bold py-1.5 px-3 rounded-lg border transition-all bg-red-500/10 hover:bg-red-500/20 text-red-450 border-red-500/20`}
+                      title="Permanently Delete User"
+                    >
+                      <Trash2 className="w-3 h-3 text-red-500" />
                     </button>
                   </div>
                 )}
