@@ -390,39 +390,7 @@ export default function App() {
           </nav>
         </div>
 
-        {/* User Card info + Logout */}
-        <div className={`p-4 border-t ${isDarkMode ? 'border-slate-850' : 'border-slate-200'}`}>
-          <div className="flex items-center justify-between gap-2 mb-4 px-2">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center border shrink-0 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-650'}`}>
-                <UserIcon className="w-4 h-4" />
-              </div>
-              <div className="overflow-hidden">
-                <h4 className="text-xs font-black truncate">{user.name}</h4>
-                <span className="text-[9px] uppercase font-bold text-slate-550 block">{user.role}</span>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsChangePasswordOpen(true)}
-              className={`p-2 rounded-xl border transition-all shrink-0 ${
-                isDarkMode 
-                  ? 'border-slate-850 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white' 
-                  : 'border-slate-250 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900'
-              }`}
-              title="Change Password"
-            >
-              <Key className="w-3.5 h-3.5" />
-            </button>
-          </div>
 
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-450 border border-rose-500/20 font-bold py-2.5 px-4 rounded-xl text-xs transition-all"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
-          </button>
-        </div>
       </aside>
 
       {/* Main layout container */}
@@ -444,15 +412,38 @@ export default function App() {
             <span className="text-xs font-bold text-slate-400 hidden sm:inline-block">NIYANTRAAN - Enterprise Workspace</span>
           </div>
 
-          {/* Theme switcher + Profile name */}
-          <div className="flex items-center gap-4">
+          {/* User Controls & Theme switcher */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="hidden sm:flex flex-col items-end mr-2">
+              <h4 className="text-xs font-black truncate">{user.name}</h4>
+              <span className="text-[9px] uppercase font-bold text-slate-550 block">{user.role}</span>
+            </div>
+            
+            <button
+              onClick={() => setIsChangePasswordOpen(true)}
+              className={`p-2 sm:p-2.5 rounded-xl border transition-all ${
+                isDarkMode ? 'border-slate-850 hover:bg-slate-900 text-slate-400' : 'border-slate-250 hover:bg-slate-100 text-slate-600'
+              }`}
+              title="Change Password"
+            >
+              <Key className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+            </button>
+            
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2.5 rounded-xl border transition-all ${
+              className={`p-2 sm:p-2.5 rounded-xl border transition-all ${
                 isDarkMode ? 'border-slate-850 hover:bg-slate-900 text-amber-450' : 'border-slate-250 hover:bg-slate-100 text-slate-600'
               }`}
             >
-              {isDarkMode ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+              {isDarkMode ? <Sun className="w-4 h-4 sm:w-4.5 sm:h-4.5" /> : <Moon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />}
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center justify-center p-2 sm:p-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-450 border border-rose-500/20 rounded-xl transition-all"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
             </button>
           </div>
         </header>

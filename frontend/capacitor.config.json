@@ -2,7 +2,6 @@
   "appId": "com.zylarq.niyantraan",
   "appName": "NIYANTRAAN",
   "webDir": "dist",
-  "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https"
   }
