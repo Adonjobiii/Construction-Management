@@ -22,7 +22,9 @@ const db = {
       // Auto-translate Table Creation Syntax
       if (pgSql.toUpperCase().includes('CREATE TABLE')) {
         pgSql = pgSql.replace(/INT AUTO_INCREMENT PRIMARY KEY/g, 'SERIAL PRIMARY KEY');
-        pgSql = pgSql.replace(/DATETIME DEFAULT CURRENT_TIMESTAMP/g, 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+        pgSql = pgSql.replace(/DATETIME/g, 'TIMESTAMP');
+        pgSql = pgSql.replace(/BOOLEAN DEFAULT 0/g, 'BOOLEAN DEFAULT FALSE');
+        pgSql = pgSql.replace(/BOOLEAN DEFAULT 1/g, 'BOOLEAN DEFAULT TRUE');
         pgSql = pgSql.replace(/ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;/g, '');
       }
       
@@ -541,7 +543,7 @@ async function createTables() {
 
   for (const idx of indexes) {
     try {
-      if (isSQLite) {
+      if (isSQLite || isPostgres) {
         await db.query(`CREATE INDEX IF NOT EXISTS ${idx.name} ON ${idx.table}(${idx.column})`);
       } else {
         const indexCheck = await db.query(`SHOW INDEX FROM ${idx.table} WHERE Key_name = '${idx.name}'`);
