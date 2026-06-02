@@ -70,41 +70,33 @@ export default function App() {
   // Fetch App Data
   const fetchData = async () => {
     if (!token) return;
-    try {
-      // 1. Fetch sites
-      const resSites = await apiClient.get('/sites');
-      setSites(resSites.data);
 
-      // 2. Fetch expenses
-      const resExp = await apiClient.get('/expenses');
-      setExpenses(resExp.data);
+    const endpoints = [
+      { key: 'sites', call: apiClient.get('/sites'), setter: setSites },
+      { key: 'expenses', call: apiClient.get('/expenses'), setter: setExpenses },
+      { key: 'requests', call: apiClient.get('/requests'), setter: setRequests },
+      { key: 'chats', call: apiClient.get('/chats'), setter: setChats },
+      { key: 'metrics', call: apiClient.get('/dashboard-metrics'), setter: setMetrics }
+    ];
 
-      // 3. Fetch requests
-      const resReq = await apiClient.get('/requests');
-      setRequests(resReq.data);
-
-      // 4. Fetch chats
-      const resChat = await apiClient.get('/chats');
-      setChats(resChat.data);
-
-      // 5. Fetch dashboard metrics
-      const resMetrics = await apiClient.get('/dashboard-metrics');
-      setMetrics(resMetrics.data);
-
-      // Admin & Accountant only fetches
-      if (user?.role === 'admin' || user?.role === 'accountant') {
-        const resLogs = await apiClient.get('/activity-logs');
-        setAuditLogs(resLogs.data);
-      }
-
-      // Admin only fetches
-      if (user?.role === 'admin') {
-        const resUsers = await apiClient.get('/auth/users');
-        setUsers(resUsers.data);
-      }
-    } catch (err) {
-      console.error('Error fetching dashboard data:', err);
+    if (user?.role === 'admin' || user?.role === 'accountant') {
+      endpoints.push({ key: 'logs', call: apiClient.get('/activity-logs'), setter: setAuditLogs });
     }
+
+    if (user?.role === 'admin') {
+      endpoints.push({ key: 'users', call: apiClient.get('/auth/users'), setter: setUsers });
+    }
+
+    const results = await Promise.allSettled(endpoints.map(ep => ep.call));
+
+    results.forEach((result, index) => {
+      const ep = endpoints[index];
+      if (result.status === 'fulfilled') {
+        ep.setter(result.value.data);
+      } else {
+        console.error(`Error fetching ${ep.key}:`, result.reason);
+      }
+    });
   };
 
   useEffect(() => {

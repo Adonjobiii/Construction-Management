@@ -920,9 +920,9 @@ router.get('/dashboard-metrics', authenticateToken, async (req, res) => {
     
     // Admins and Accountants see all database metrics
     if (req.user.role === 'admin' || req.user.role === 'accountant') {
-      siteCountResult = await db.query('SELECT COUNT(*) as count FROM sites WHERE status = "in-progress" OR status = "planning"');
+      siteCountResult = await db.query(`SELECT COUNT(*) as count FROM sites WHERE status = 'in-progress' OR status = 'planning'`);
       expenseSumResult = await db.query('SELECT SUM(amount) as total FROM expenses');
-      pendingRequestResult = await db.query('SELECT COUNT(*) as count FROM requests WHERE status = "pending"');
+      pendingRequestResult = await db.query(`SELECT COUNT(*) as count FROM requests WHERE status = 'pending'`);
       
       expenseCategoryResult = await db.query(`
         SELECT category, SUM(amount) as value 
@@ -930,10 +930,14 @@ router.get('/dashboard-metrics', authenticateToken, async (req, res) => {
         GROUP BY category
       `);
 
-      // Mock or fetch weekly/monthly trends. In real app, we group by month
-      const monthlySql = db.isSQLite() ? 
-        `SELECT strftime('%Y-%m', date_time) as month, SUM(amount) as total FROM expenses GROUP BY month ORDER BY month DESC LIMIT 6` :
-        `SELECT DATE_FORMAT(date_time, '%Y-%m') as month, SUM(amount) as total FROM expenses GROUP BY month ORDER BY month DESC LIMIT 6`;
+      let monthlySql = '';
+      if (db.isSQLite && db.isSQLite()) {
+        monthlySql = `SELECT strftime('%Y-%m', date_time) as month, SUM(amount) as total FROM expenses GROUP BY month ORDER BY month DESC LIMIT 6`;
+      } else if (db.isPostgres && db.isPostgres()) {
+        monthlySql = `SELECT TO_CHAR(date_time, 'YYYY-MM') as month, SUM(amount) as total FROM expenses GROUP BY month ORDER BY month DESC LIMIT 6`;
+      } else {
+        monthlySql = `SELECT DATE_FORMAT(date_time, '%Y-%m') as month, SUM(amount) as total FROM expenses GROUP BY month ORDER BY month DESC LIMIT 6`;
+      }
       monthlyTrendResult = await db.query(monthlySql);
 
     } else {
