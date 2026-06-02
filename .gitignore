@@ -1,0 +1,6 @@
+node_modules/
+.env
+uploads/
+buildsync_pro.sqlite
+dist/
+.DS_Store
