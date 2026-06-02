@@ -1,16 +1,55 @@
 const mysql = require('mysql2/promise');
 const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
 let dbClient = null;
 let isSQLite = false;
+let isPostgres = false;
 
 // Unified database interface
 const db = {
   query: async (sql, params = []) => {
-    if (isSQLite) {
+    if (isPostgres) {
+      let pgSql = sql;
+      let counter = 1;
+      
+      // Translate MySQL ? placeholders to Postgres $1, $2
+      pgSql = pgSql.replace(/\?/g, () => `$${counter++}`);
+      
+      // Auto-translate Table Creation Syntax
+      if (pgSql.toUpperCase().includes('CREATE TABLE')) {
+        pgSql = pgSql.replace(/INT AUTO_INCREMENT PRIMARY KEY/g, 'SERIAL PRIMARY KEY');
+        pgSql = pgSql.replace(/DATETIME DEFAULT CURRENT_TIMESTAMP/g, 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+        pgSql = pgSql.replace(/ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;/g, '');
+      }
+      
+      // Add RETURNING id for inserts to mock MySQL's insertId
+      const isInsert = pgSql.trim().toUpperCase().startsWith('INSERT');
+      if (isInsert && !pgSql.toUpperCase().includes('RETURNING ID')) {
+        pgSql += ' RETURNING id';
+      }
+
+      try {
+        const result = await dbClient.query(pgSql, params);
+        const cleanSql = pgSql.trim().toUpperCase();
+        const isSelect = cleanSql.startsWith('SELECT') || cleanSql.startsWith('SHOW');
+        
+        if (isSelect) {
+          return result.rows;
+        } else {
+          return {
+            insertId: (result.rows && result.rows.length > 0) ? result.rows[0].id : null,
+            affectedRows: result.rowCount
+          };
+        }
+      } catch (err) {
+        console.error('Postgres Query Error:', err, 'SQL:', pgSql);
+        throw err;
+      }
+    } else if (isSQLite) {
       return new Promise((resolve, reject) => {
         // SQLite uses ? for placeholders just like MySQL
         const cleanSql = sql.trim();
@@ -55,8 +94,11 @@ const db = {
 async function initializeDatabase() {
   const useSqliteFallback = process.env.USE_SQLITE_FALLBACK === 'true';
   const useSqliteOnly = process.env.USE_SQLITE_ONLY === 'true';
-
-  if (useSqliteOnly) {
+  
+  if (process.env.DATABASE_URL) {
+    console.log('DATABASE_URL detected. Connecting to PostgreSQL (Neon DB)...');
+    await connectPostgres();
+  } else if (useSqliteOnly) {
     console.log('USE_SQLITE_ONLY is enabled. Bypassing MySQL and connecting directly to SQLite...');
     await connectSQLite();
   } else if (!useSqliteFallback) {
@@ -74,6 +116,19 @@ async function initializeDatabase() {
 
   // Create tables
   await createTables();
+}
+
+async function connectPostgres() {
+  dbClient = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+  
+  const client = await dbClient.connect();
+  client.release();
+  
+  isPostgres = true;
+  console.log('Successfully connected to PostgreSQL Database (Neon)');
 }
 
 async function connectMySQL() {
