@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:5000`;
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
+export const API_BASE = envBaseUrl ? envBaseUrl.replace(/\/+$/, '') : `http://${window.location.hostname}:5000`;
 export const API_URL = `${API_BASE}/api`;
 
 const apiClient = axios.create({
