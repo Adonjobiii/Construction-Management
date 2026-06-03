@@ -111,11 +111,11 @@ export default function Dashboard({ metrics, recentLogs, sites, expenses, reques
 
   const budgetAlerts = useMemo(() => {
     if (isAll) {
-      return metrics?.budgetStatus?.filter(site => site.spent > site.budget) || [];
+      return metrics?.budgetStatus?.filter(site => Number(site.spent) > Number(site.budget)) || [];
     }
     if (!selectedSite) return [];
-    return totalExpenses > selectedSite.budget ? [
-      { id: selectedSite.id, name: selectedSite.name, spent: totalExpenses, budget: selectedSite.budget }
+    return totalExpenses > Number(selectedSite.budget) ? [
+      { id: selectedSite.id, name: selectedSite.name, spent: totalExpenses, budget: Number(selectedSite.budget) }
     ] : [];
   }, [isAll, selectedSite, totalExpenses, metrics]);
 
