@@ -373,8 +373,10 @@ export default function Dashboard({ metrics, recentLogs, sites, expenses, reques
               <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
                 {metrics?.budgetStatus && metrics.budgetStatus.length > 0 ? (
                   metrics.budgetStatus.map((site) => {
-                    const percent = site.budget > 0 ? Math.min(100, Math.round((site.spent / site.budget) * 100)) : 0;
-                    const isExceeded = site.spent > site.budget;
+                    const budgetNum = Number(site.budget);
+                    const spentNum = Number(site.spent);
+                    const percent = budgetNum > 0 ? Math.min(100, Math.round((spentNum / budgetNum) * 100)) : 0;
+                    const isExceeded = spentNum > budgetNum;
 
                     return (
                       <div key={site.id} className="space-y-2">
